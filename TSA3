@@ -1,0 +1,95 @@
+package com.mycompany.bookbridge;
+
+import java.util.Scanner;
+
+public class BookBridge {
+    private static final int TRANSACTION_COUNT = 5;
+
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+        LibraryService service = new LibraryService(TRANSACTION_COUNT);
+
+        System.out.println("========================================");
+        System.out.println("        BOOKBRIDGE TSA2 OOP SYSTEM");
+        System.out.println("========================================");
+        System.out.println("Enter five valid borrowing requests.\n");
+
+        for (int i = 1; i <= TRANSACTION_COUNT; i++) {
+            System.out.println("--- Transaction " + i + " of " + TRANSACTION_COUNT + " ---");
+
+            String memberId = readRequiredText(input, "Member ID: ");
+            String memberName = readRequiredText(input, "Member name: ");
+            String membershipType = readMembershipType(input);
+            String isbn = readRequiredText(input, "ISBN: ");
+            String bookTitle = readRequiredText(input, "Book title: ");
+            int requestedDays = readIntInRange(input, "Requested loan days (1-30): ", 1, 30);
+            boolean available = readAvailability(input);
+            int lateDays = readNonNegativeInt(input, "Late days (0 or more): ");
+
+            Member member = createMember(membershipType, memberId, memberName);
+            LibraryBook book = new LibraryBook(isbn, bookTitle, available);
+            LoanRecord loan = new LoanRecord(member, book, requestedDays, lateDays);
+            String outcome = service.processLoan(loan);
+
+            printTransactionResult(loan, outcome);
+            System.out.println();
+        }
+
+        printSummary(service);
+        runPolymorphismDemo();
+        input.close();
+    }
+
+    private static Member createMember(String type, String id, String name) {
+        switch (type) {
+            case "STUDENT": return new StudentMember(id, name);
+            case "FACULTY": return new FacultyMember(id, name);
+            case "GUEST": return new GuestMember(id, name);
+            default: throw new IllegalArgumentException("Invalid membership type.");
+        }
+    }
+
+    private static String readRequiredText(Scanner input, String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String value = input.nextLine().trim();
+            if (!value.isEmpty()) return value;
+            System.out.println("Invalid input: this field cannot be blank. Please try again.");
+        }
+    }
+
+    private static String readMembershipType(Scanner input) {
+        while (true) {
+            String value = readRequiredText(input, "Membership type (STUDENT/FACULTY/GUEST): ").toUpperCase();
+            if (value.equals("STUDENT") || value.equals("FACULTY") || value.equals("GUEST")) return value;
+            System.out.println("Invalid membership type. Use STUDENT, FACULTY, or GUEST.");
+        }
+    }
+
+    private static int readIntInRange(Scanner input, String prompt, int minimum, int maximum) {
+        while (true) {
+            System.out.print(prompt);
+            String value = input.nextLine().trim();
+            try {
+                int number = Integer.parseInt(value);
+                if (number >= minimum && number <= maximum) return number;
+            } catch (NumberFormatException exception) {
+                // The validation message below handles invalid numeric input.
+            }
+            System.out.println("Invalid input: enter a whole number from " + minimum + " to " + maximum + ".");
+        }
+    }
+
+    private static int readNonNegativeInt(Scanner input, String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String value = input.nextLine().trim();
+            try {
+                int number = Integer.parseInt(value);
+                if (number >= 0) return number;
+            } catch (NumberFormatException exception) {
+                // The validation message below handles invalid numeric input.
+            }
+            System.out.println("Invalid input: late days cannot be negative.");
+        }
+    }
